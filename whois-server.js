@@ -34,11 +34,27 @@ const server = http.createServer(async (req, res) => {
     try {
       console.log(`[WHOIS Server] Incoming request for: ${domain}`);
       const result = await getWhoisDetails(domain, { silent: true });
+      const regContactName = result.details['Registrant Contact Name'];
+      const registrant = result.details['Registrant'];
+      const name = (Array.isArray(regContactName) ? regContactName[0] : regContactName) ||
+                   (Array.isArray(registrant) ? registrant[0] : registrant) || '';
+
+      const regContactEmail = result.details['Registrant Contact Email'];
+      const techContactEmail = result.details['Tech Contact Email'];
+      const email = (Array.isArray(regContactEmail) ? regContactEmail[0] : regContactEmail) ||
+                    (Array.isArray(techContactEmail) ? techContactEmail[0] : techContactEmail) || '';
+
       res.writeHead(200);
       res.end(JSON.stringify({
         domain: result.domain,
         source: result.source,
-        ...result.details
+        ...result.details,
+        Name: name,
+        Email: email,
+        Registrant_ID: result.details['Registrant ID'] || result.details['Eligibility ID'] || '',
+        Eligibility_Type: result.details['Eligibility Type'] || '',
+        Eligibility_Name: result.details['Eligibility Name'] || '',
+        WHOIS_Source: result.source || 'web'
       }));
     } catch (err) {
       res.writeHead(500);
